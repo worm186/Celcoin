@@ -445,3 +445,8 @@ endif()
 if(BUILD_FUZZ_BINARY)
   add_subdirectory(test/fuzz)
 endif()
+
+# RandomX (prova de trabalho)
+add_subdirectory(randomx EXCLUDE_FROM_ALL)
+target_link_libraries(bitcoin_common PRIVATE randomx)
+target_include_directories(bitcoin_common PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/randomx/src)
