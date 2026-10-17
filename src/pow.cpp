@@ -169,3 +169,69 @@ bool CheckProofOfWorkImpl(uint256 hash, unsigned int nBits, const Consensus::Par
 
     return true;
 }
+
+// ===== RandomX: hash da prova de trabalho =====
+#include <randomx.h>
+#include <primitives/block.h>
+#include <streams.h>
+#include <uint256.h>
+
+#include <memory>
+#include <stdexcept>
+
+namespace {
+
+// Chave FIXA, so para a fase de testes.
+// Antes da rede real: trocar por chave que muda com a cadeia.
+const char RANDOMX_KEY[] = "Rubiana-RandomX-teste-1";
+
+struct RandomXContext {
+    randomx_flags flags{RANDOMX_FLAG_DEFAULT};
+    randomx_cache* cache{nullptr};
+
+    RandomXContext()
+    {
+        flags = randomx_get_flags();
+        cache = randomx_alloc_cache(flags);
+        if (!cache) {
+            flags = RANDOMX_FLAG_DEFAULT;
+            cache = randomx_alloc_cache(flags);
+        }
+        if (!cache) throw std::runtime_error("RandomX: falha ao alocar cache");
+        randomx_init_cache(cache, RANDOMX_KEY, sizeof(RANDOMX_KEY) - 1);
+    }
+    ~RandomXContext()
+    {
+        if (cache) randomx_release_cache(cache);
+    }
+};
+
+RandomXContext& GetRandomXContext()
+{
+    static RandomXContext ctx;
+    return ctx;
+}
+
+struct RandomXVmDeleter {
+    void operator()(randomx_vm* vm) const
+    {
+        if (vm) randomx_destroy_vm(vm);
+    }
+};
+
+} // namespace
+
+uint256 GetPoWHash(const CBlockHeader& block)
+{
+    RandomXContext& ctx = GetRandomXContext();
+    thread_local std::unique_ptr<randomx_vm, RandomXVmDeleter> vm;
+    if (!vm) {
+        vm.reset(randomx_create_vm(ctx.flags, ctx.cache, nullptr));
+        if (!vm) throw std::runtime_error("RandomX: falha ao criar a VM");
+    }
+    DataStream ss{};
+    ss << block;
+    uint256 result;
+    randomx_calculate_hash(vm.get(), reinterpret_cast<const unsigned char*>(ss.data()), ss.size(), result.begin());
+    return result;
+}

@@ -47,4 +47,6 @@ bool CheckProofOfWorkImpl(uint256 hash, unsigned int nBits, const Consensus::Par
  */
 bool PermittedDifficultyTransition(const Consensus::Params& params, int64_t height, uint32_t old_nbits, uint32_t new_nbits);
 
+uint256 GetPoWHash(const CBlockHeader& block);
+
 #endif // BITCOIN_POW_H
