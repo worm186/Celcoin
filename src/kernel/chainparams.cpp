@@ -73,6 +73,27 @@ static CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits
     return CreateGenesisBlock(pszTimestamp, genesisOutputScript, nTime, nNonce, nBits, nVersion, genesisReward);
 }
 
+// TEMPORARIO: minera o genesis com RandomX ao iniciar e grava o resultado.
+#include <arith_uint256.h>
+#include <pow.h>
+#include <cstdio>
+
+static CBlock MineGenesis(CBlock block)
+{
+    bool fNegative, fOverflow;
+    arith_uint256 target;
+    target.SetCompact(block.nBits, &fNegative, &fOverflow);
+    block.nNonce = 0;
+    while (UintToArith256(GetPoWHash(block)) > target) {
+        ++block.nNonce;
+    }
+    if (FILE* f = fopen("/tmp/rubiana_genesis.txt", "w")) {
+        fprintf(f, "nonce=%u\nhash=%s\nmerkle=%s\n", block.nNonce, block.GetHash().ToString().c_str(), block.hashMerkleRoot.ToString().c_str());
+        fclose(f);
+    }
+    return block;
+}
+
 void CChainParams::ApplyDeploymentOptions(const DeploymentOptions& opts)
 {
     for (const auto& [dep, height] : opts.activation_heights) {
@@ -281,10 +302,8 @@ public:
         m_assumed_blockchain_size = 245;
         m_assumed_chain_state_size = 19;
 
-        genesis = CreateGenesisBlock(1296688602, 414098458, 0x1d00ffff, 1, 50 * COIN);
+        genesis = MineGenesis(CreateGenesisBlock(1792195200, 0, 0x2000ffff, 1, 86 * COIN));
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256{"000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"});
-        assert(genesis.hashMerkleRoot == uint256{"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"});
 
         vFixedSeeds.clear();
         vSeeds.clear();
