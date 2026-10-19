@@ -28,7 +28,7 @@ Nome provisório: Rubiana, sigla RUBIA. Checagens feitas (CoinMarketCap, GitHub,
 - Segundo nó: -datadir=/tmp/noB -port=18687 -rpcport=18334 -connect=127.0.0.1:18686
 
 ## Pendências (ordem sugerida)
-1. Tirar do código o trabalho mínimo, assumevalid e sementes do Bitcoin.
+1. (FEITO) Tirar do código o trabalho mínimo, assumevalid e sementes do Bitcoin.
 2. Chave do RandomX que muda com a cadeia (hoje fixa).
 3. Ajuste de dificuldade bloco a bloco (tipo LWMA) com proteção contra manipulação de tempo.
 4. Remover o MineGenesis temporário; gênesis definitivo da rede principal com a mensagem; renomear programas e pastas; nós de entrada.
@@ -39,3 +39,6 @@ Nome provisório: Rubiana, sigla RUBIA. Checagens feitas (CoinMarketCap, GitHub,
 ## Observações
 - O responsável pelo projeto é iniciante em programação: avançar em passos pequenos, um comando por vez, pedindo print do resultado.
 - Terminal: copiar só os blocos de comando; "q" sai do visualizador; parar o Codespace pelo site github.com/codespaces.
+
+## Registro
+- 19/10/2026: dois nós sincronizando na testnet (127 blocos) sem opções extras; removidos do código o trabalho mínimo, assumevalid e sementes do Bitcoin. Próximo: benchmark do RandomX em celular real (Termux).
