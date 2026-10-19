@@ -75,8 +75,8 @@ unsigned int CalculateNextWorkRequired(const CBlockIndex* pindexLast, int64_t nF
         bnNew.SetCompact(pindexLast->nBits);
     }
 
-    bnNew *= nActualTimespan;
     bnNew /= params.nPowTargetTimespan;
+    bnNew *= nActualTimespan;
 
     if (bnNew > bnPowLimit)
         bnNew = bnPowLimit;
