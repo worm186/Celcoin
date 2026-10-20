@@ -170,46 +170,77 @@ bool CheckProofOfWorkImpl(uint256 hash, unsigned int nBits, const Consensus::Par
     return true;
 }
 
-// ===== RandomX: hash da prova de trabalho =====
+// ===== RandomX: hash da prova de trabalho (chave muda a cada 2 dias) =====
 #include <randomx.h>
 #include <primitives/block.h>
 #include <streams.h>
 #include <uint256.h>
 
+#include <cstdint>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace {
 
-// Chave FIXA, so para a fase de testes.
-// Antes da rede real: trocar por chave que muda com a cadeia.
-const char RANDOMX_KEY[] = "Rubiana-RandomX-teste-1";
+// A chave do RandomX depende da "epoca" do cabecalho: nTime / 2 dias.
+constexpr uint32_t RANDOMX_EPOCH_SECONDS = 2 * 24 * 60 * 60;
+constexpr size_t RANDOMX_MAX_CACHED_EPOCHS = 2;
 
-struct RandomXContext {
-    randomx_flags flags{RANDOMX_FLAG_DEFAULT};
+std::mutex g_randomx_mutex;
+bool g_randomx_flags_ready = false;
+randomx_flags g_randomx_flags = RANDOMX_FLAG_DEFAULT;
+
+struct RandomXCache {
     randomx_cache* cache{nullptr};
 
-    RandomXContext()
+    // Chamado com g_randomx_mutex travado.
+    explicit RandomXCache(uint32_t epoch)
     {
-        flags = randomx_get_flags();
-        cache = randomx_alloc_cache(flags);
-        if (!cache) {
-            flags = RANDOMX_FLAG_DEFAULT;
-            cache = randomx_alloc_cache(flags);
+        if (!g_randomx_flags_ready) {
+            g_randomx_flags = randomx_get_flags();
+            cache = randomx_alloc_cache(g_randomx_flags);
+            if (!cache) {
+                g_randomx_flags = RANDOMX_FLAG_DEFAULT;
+                cache = randomx_alloc_cache(g_randomx_flags);
+            }
+            g_randomx_flags_ready = true;
+        } else {
+            cache = randomx_alloc_cache(g_randomx_flags);
         }
         if (!cache) throw std::runtime_error("RandomX: falha ao alocar cache");
-        randomx_init_cache(cache, RANDOMX_KEY, sizeof(RANDOMX_KEY) - 1);
+        const std::string key = "Rubiana-RandomX-v1-" + std::to_string(epoch);
+        randomx_init_cache(cache, key.data(), key.size());
     }
-    ~RandomXContext()
+    ~RandomXCache()
     {
         if (cache) randomx_release_cache(cache);
     }
+    RandomXCache(const RandomXCache&) = delete;
+    RandomXCache& operator=(const RandomXCache&) = delete;
 };
 
-RandomXContext& GetRandomXContext()
+// Caches das epocas recentes (a mais recente primeiro).
+std::vector<std::pair<uint32_t, std::shared_ptr<RandomXCache>>> g_randomx_caches;
+
+std::shared_ptr<RandomXCache> GetCacheForEpoch(uint32_t epoch)
 {
-    static RandomXContext ctx;
-    return ctx;
+    std::lock_guard<std::mutex> lock(g_randomx_mutex);
+    for (size_t i = 0; i < g_randomx_caches.size(); ++i) {
+        if (g_randomx_caches[i].first == epoch) {
+            auto found = g_randomx_caches[i];
+            g_randomx_caches.erase(g_randomx_caches.begin() + i);
+            g_randomx_caches.insert(g_randomx_caches.begin(), found);
+            return found.second;
+        }
+    }
+    auto created = std::make_shared<RandomXCache>(epoch);
+    g_randomx_caches.insert(g_randomx_caches.begin(), std::make_pair(epoch, created));
+    if (g_randomx_caches.size() > RANDOMX_MAX_CACHED_EPOCHS) g_randomx_caches.pop_back();
+    return created;
 }
 
 struct RandomXVmDeleter {
@@ -223,12 +254,23 @@ struct RandomXVmDeleter {
 
 uint256 GetPoWHash(const CBlockHeader& block)
 {
-    RandomXContext& ctx = GetRandomXContext();
+    const uint32_t epoch = block.nTime / RANDOMX_EPOCH_SECONDS;
+    thread_local std::shared_ptr<RandomXCache> current_cache;
+    thread_local uint32_t current_epoch = 0;
     thread_local std::unique_ptr<randomx_vm, RandomXVmDeleter> vm;
-    if (!vm) {
-        vm.reset(randomx_create_vm(ctx.flags, ctx.cache, nullptr));
-        if (!vm) throw std::runtime_error("RandomX: falha ao criar a VM");
+
+    if (!current_cache || current_epoch != epoch) {
+        std::shared_ptr<RandomXCache> cache = GetCacheForEpoch(epoch);
+        if (!vm) {
+            vm.reset(randomx_create_vm(g_randomx_flags, cache->cache, nullptr));
+            if (!vm) throw std::runtime_error("RandomX: falha ao criar a VM");
+        } else {
+            randomx_vm_set_cache(vm.get(), cache->cache);
+        }
+        current_cache = cache;
+        current_epoch = epoch;
     }
+
     DataStream ss{};
     ss << block;
     uint256 result;
