@@ -11,9 +11,11 @@
 #include <uint256.h>
 #include <util/check.h>
 
+static unsigned int GetNextWorkRequiredLWMA(const CBlockIndex* pindexLast, const Consensus::Params& params);
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     assert(pindexLast != nullptr);
+    if (!params.fPowNoRetargeting) return GetNextWorkRequiredLWMA(pindexLast, params);
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
 
     // Only change once per difficulty adjustment interval
@@ -276,4 +278,47 @@ uint256 GetPoWHash(const CBlockHeader& block)
     uint256 result;
     randomx_calculate_hash(vm.get(), reinterpret_cast<const unsigned char*>(ss.data()), ss.size(), result.begin());
     return result;
+}
+
+// ===== Dificuldade bloco a bloco (LWMA-1, de Zawy) =====
+#include <algorithm>
+#include <arith_uint256.h>
+
+static unsigned int GetNextWorkRequiredLWMA(const CBlockIndex* pindexLast, const Consensus::Params& params)
+{
+    const int64_t T = params.nPowTargetSpacing; // 300 s
+    const int64_t N = 60;                       // janela de 60 blocos
+    const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
+
+    // Poucos blocos ainda: mantem a dificuldade do genesis.
+    if (pindexLast->nHeight < N) return pindexLast->nBits;
+
+    const int64_t k = N * (N + 1) * T / 2;
+    int64_t t = 0;
+    int64_t j = 0;
+    arith_uint256 avgTarget;
+    int64_t previous_timestamp = pindexLast->GetAncestor(pindexLast->nHeight - N)->GetBlockTime();
+
+    for (int64_t i = pindexLast->nHeight - N + 1; i <= pindexLast->nHeight; ++i) {
+        const CBlockIndex* blk = pindexLast->GetAncestor(i);
+        const int64_t this_timestamp = (blk->GetBlockTime() > previous_timestamp) ? blk->GetBlockTime() : previous_timestamp + 1;
+        const int64_t solvetime = std::min(6 * T, this_timestamp - previous_timestamp);
+        previous_timestamp = this_timestamp;
+        ++j;
+        t += solvetime * j;
+        arith_uint256 target;
+        target.SetCompact(blk->nBits);
+        target /= static_cast<uint32_t>(N);
+        avgTarget += target;
+    }
+
+    // Limita o salto maximo de dificuldade a cerca de 10x por bloco.
+    if (t < N * N * T / 20) t = N * N * T / 20;
+
+    // Divide antes de multiplicar para nao estourar o tamanho do numero.
+    arith_uint256 bnNew = avgTarget;
+    bnNew /= static_cast<uint32_t>(k);
+    bnNew *= static_cast<uint32_t>(t);
+    if (bnNew > bnPowLimit) bnNew = bnPowLimit;
+    return bnNew.GetCompact();
 }
