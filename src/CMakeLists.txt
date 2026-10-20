@@ -447,6 +447,7 @@ if(BUILD_FUZZ_BINARY)
 endif()
 
 # RandomX (prova de trabalho)
+set(ARCH "default" CACHE STRING "RandomX portatil" FORCE)
 add_subdirectory(randomx EXCLUDE_FROM_ALL)
 target_link_libraries(bitcoin_common PRIVATE randomx)
 target_include_directories(bitcoin_common PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/randomx/src)
