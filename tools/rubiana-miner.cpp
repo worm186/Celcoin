@@ -1,8 +1,12 @@
-// rubiana-miner: motor de mineracao RandomX da Rubiana (PROTOTIPO).
+// rubiana-miner v2: motor de mineracao RandomX da Rubiana (PROTOTIPO).
 // Conversa por linhas (stdin/stdout):
-//   entrada: JOB <id> <cabecalho_76_bytes_hex> <alvo_64_hex> | STATS | QUIT
-//   saida:   READY | FOUND <id> <nonce> <hash_hex> | STATS <hashes_totais> <segundos>
-// opcoes: --threads N   --full (modo completo, usa ~2 GB; sem isso, modo leve)
+//   entrada: JOB <id> <cabecalho_76_hex> <alvo_bloco_64_hex> [<alvo_share_64_hex>]
+//            HASH <cabecalho_80_hex> | STOP | STATS | QUIT
+//   saida:   READY
+//            SHARE <id> <nonce> <hash_hex> <e_bloco 0|1>   (cada hash que vale um share)
+//            FOUND <id> <nonce> <hash_hex>                 (primeiro hash que vale um bloco, 1x por trabalho)
+//            HASH <hash_hex> | STATS <hashes_totais> <segundos>
+// opcoes: --threads N   --full (modo completo, ~2 GB; sem isso, modo leve)
 #include <randomx.h>
 
 #include <algorithm>
@@ -27,6 +31,7 @@ struct Job {
     uint64_t id{0};
     uint8_t header[76]{};
     uint8_t target_le[32]{};
+    uint8_t share_le[32]{};
 };
 
 std::mutex g_job_mutex;
@@ -49,6 +54,12 @@ randomx_dataset* g_dataset = nullptr;
 bool g_res_built = false;
 uint32_t g_res_epoch = 0;
 
+// Conferencia de hashes (comando HASH): cache leve proprio, so no thread principal.
+randomx_cache* v_cache = nullptr;
+randomx_vm* v_vm = nullptr;
+uint32_t v_epoch = 0;
+bool v_ready = false;
+
 int HexVal(char c)
 {
     if (c >= '0' && c <= '9') return c - '0';
@@ -70,6 +81,33 @@ bool ParseHex(const std::string& s, std::vector<uint8_t>& out)
     return true;
 }
 
+// O hash vale como numero de 256 bits "little-endian": compara do byte 31 ao 0.
+bool LessEq(const uint8_t* hash, const uint8_t* target_le)
+{
+    for (int b = 31; b >= 0; --b) {
+        if (hash[b] < target_le[b]) return true;
+        if (hash[b] > target_le[b]) return false;
+    }
+    return true;
+}
+
+void PrintHex(const uint8_t* hash)
+{
+    for (int b = 0; b < 32; ++b) printf("%02x", hash[b]);
+}
+
+uint32_t EpochOf(const uint8_t* header)
+{
+    const uint32_t ntime = static_cast<uint32_t>(header[68]) | (static_cast<uint32_t>(header[69]) << 8) |
+                           (static_cast<uint32_t>(header[70]) << 16) | (static_cast<uint32_t>(header[71]) << 24);
+    return ntime / (2 * 24 * 60 * 60); // mesma regra de chave do no (pow.cpp)
+}
+
+std::string KeyOf(uint32_t epoch)
+{
+    return "Rubiana-RandomX-v1-" + std::to_string(epoch);
+}
+
 void FreeResources()
 {
     if (g_dataset) {
@@ -87,8 +125,7 @@ void FreeResources()
 bool BuildResources(uint32_t epoch)
 {
     FreeResources();
-    // Mesma regra de chave do no (pow.cpp).
-    const std::string key = "Rubiana-RandomX-v1-" + std::to_string(epoch);
+    const std::string key = KeyOf(epoch);
     fprintf(stderr, "[motor] preparando a chave da epoca %u (%s)...\n", epoch, g_full ? "modo completo" : "modo leve");
     g_cache = randomx_alloc_cache(g_flags);
     if (!g_cache) {
@@ -115,6 +152,29 @@ bool BuildResources(uint32_t epoch)
     g_res_built = true;
     ++g_res_version;
     fprintf(stderr, "[motor] pronto.\n");
+    return true;
+}
+
+bool VerifyPrepare(uint32_t epoch)
+{
+    if (v_ready && v_epoch == epoch) return true;
+    if (v_vm) {
+        randomx_destroy_vm(v_vm);
+        v_vm = nullptr;
+    }
+    if (v_cache) {
+        randomx_release_cache(v_cache);
+        v_cache = nullptr;
+    }
+    v_ready = false;
+    v_cache = randomx_alloc_cache(g_flags);
+    if (!v_cache) return false;
+    const std::string key = KeyOf(epoch);
+    randomx_init_cache(v_cache, key.data(), key.size());
+    v_vm = randomx_create_vm(g_flags, v_cache, nullptr);
+    if (!v_vm) return false;
+    v_epoch = epoch;
+    v_ready = true;
     return true;
 }
 
@@ -166,19 +226,17 @@ void Worker()
             uint8_t hash[32];
             randomx_calculate_hash(vm, buf, sizeof(buf), hash);
             g_hashes.fetch_add(1, std::memory_order_relaxed);
-            bool ok = true;
-            for (int b = 31; b >= 0; --b) {
-                if (hash[b] < job.target_le[b]) break;
-                if (hash[b] > job.target_le[b]) {
-                    ok = false;
-                    break;
-                }
-            }
-            if (ok && g_found_gen.exchange(gen) != gen) {
+            if (LessEq(hash, job.share_le)) {
+                const bool is_block = LessEq(hash, job.target_le);
                 std::lock_guard<std::mutex> out_lock(g_out_mutex);
-                printf("FOUND %llu %u ", static_cast<unsigned long long>(job.id), nonce);
-                for (int b = 0; b < 32; ++b) printf("%02x", hash[b]);
-                printf("\n");
+                printf("SHARE %llu %u ", static_cast<unsigned long long>(job.id), nonce);
+                PrintHex(hash);
+                printf(" %d\n", is_block ? 1 : 0);
+                if (is_block && g_found_gen.exchange(gen) != gen) {
+                    printf("FOUND %llu %u ", static_cast<unsigned long long>(job.id), nonce);
+                    PrintHex(hash);
+                    printf("\n");
+                }
                 fflush(stdout);
             }
         }
@@ -228,16 +286,15 @@ int main(int argc, char** argv)
         in >> cmd;
         if (cmd == "JOB") {
             unsigned long long id = 0;
-            std::string hh, tt;
-            in >> id >> hh >> tt;
-            std::vector<uint8_t> h, t;
-            if (!ParseHex(hh, h) || h.size() != 76 || !ParseHex(tt, t) || t.size() != 32) {
+            std::string hh, tt, ss;
+            in >> id >> hh >> tt >> ss;
+            if (ss.empty()) ss = tt;
+            std::vector<uint8_t> h, t, s;
+            if (!ParseHex(hh, h) || h.size() != 76 || !ParseHex(tt, t) || t.size() != 32 || !ParseHex(ss, s) || s.size() != 32) {
                 fprintf(stderr, "erro: JOB invalido\n");
                 continue;
             }
-            const uint32_t ntime = static_cast<uint32_t>(h[68]) | (static_cast<uint32_t>(h[69]) << 8) |
-                                   (static_cast<uint32_t>(h[70]) << 16) | (static_cast<uint32_t>(h[71]) << 24);
-            const uint32_t epoch = ntime / (2 * 24 * 60 * 60);
+            const uint32_t epoch = EpochOf(h.data());
             g_job_ready = false;
             ++g_job_gen;
             {
@@ -252,7 +309,10 @@ int main(int argc, char** argv)
             Job j;
             j.id = id;
             memcpy(j.header, h.data(), 76);
-            for (int i = 0; i < 32; ++i) j.target_le[i] = t[31 - i];
+            for (int i = 0; i < 32; ++i) {
+                j.target_le[i] = t[31 - i];
+                j.share_le[i] = s[31 - i];
+            }
             {
                 std::lock_guard<std::mutex> lock(g_job_mutex);
                 g_job = j;
@@ -261,6 +321,24 @@ int main(int argc, char** argv)
             g_next_nonce = rd();
             g_job_ready = true;
             ++g_job_gen;
+        } else if (cmd == "STOP") {
+            g_job_ready = false;
+            ++g_job_gen;
+        } else if (cmd == "HASH") {
+            std::string hh;
+            in >> hh;
+            std::vector<uint8_t> h;
+            std::lock_guard<std::mutex> out_lock(g_out_mutex);
+            if (!ParseHex(hh, h) || h.size() != 80 || !VerifyPrepare(EpochOf(h.data()))) {
+                printf("HASH ERRO\n");
+            } else {
+                uint8_t hash[32];
+                randomx_calculate_hash(v_vm, h.data(), 80, hash);
+                printf("HASH ");
+                PrintHex(hash);
+                printf("\n");
+            }
+            fflush(stdout);
         } else if (cmd == "STATS") {
             const double secs = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
             std::lock_guard<std::mutex> out_lock(g_out_mutex);
@@ -273,5 +351,7 @@ int main(int argc, char** argv)
     g_quit = true;
     for (auto& w : workers) w.join();
     FreeResources();
+    if (v_vm) randomx_destroy_vm(v_vm);
+    if (v_cache) randomx_release_cache(v_cache);
     return 0;
 }
