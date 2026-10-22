@@ -53,3 +53,10 @@ Nome provisório: Rubiana, sigla RUBIA. Checagens feitas (CoinMarketCap, GitHub,
 - Pendências restantes: renomear programas e pastas (bitcoind etc.), RandomX portátil (sem -march=native), adaptar PermittedDifficultyTransition e os testes automáticos, taxa padrão na carteira, pool, app Android, explorador, auditoria, marca/legal.
 - 20/10/2026: RandomX compilado de forma portátil (ARCH default, sem -march=native) em src/CMakeLists.txt. Próximo: renomear programas e pastas; depois adaptar PermittedDifficultyTransition (rede principal) e começar as frentes de pool, app, carteira e explorador.
 - 20/10/2026: PLANO DOS MINERADORES: núcleo compartilhado em C++ (RandomX) com duas frentes, programa de linha de comando para PC (modo completo, 2 GB) e app Android (NDK, modo leve). Ordem: (1) confirmar getblocktemplate/submitblock no nó; (2) minerador solo de PC; (3) servidor de pool (stratum próprio, pagamento por shares); (4) minerador ligado à pool; (5) app Android. XMRig não serve direto (formato de cabeçalho e chave por época do nTime). Cuidados: antivírus, código aberto, consentimento e limite de CPU (nunca minerador escondido).
+
+## Princípios do projeto
+- Honestidade e transparência: código aberto, sem mineração escondida, sem promessa de lucro.
+- Lançamento justo: sem pré-mineração (a recompensa do gênesis não é gastável; toda moeda nasce por mineração) e sem taxa de desenvolvedor.
+- Mineração é sorteio proporcional ao poder de hash: qualquer minerador, mesmo pequeno, pode achar um bloco. Não se promete igualdade de resultados entre aparelhos.
+- Pools: pagamento proporcional ao trabalho, regras públicas, limite de tamanho por pool e, no futuro, opção descentralizada.
+- 20/10/2026: protótipo de minerador solo em tools/: rubiana-search.cpp (RandomX, modo leve, 1 thread; compilar com g++ ligando librandomx.a) e rubiana-solo-miner.py (getblocktemplate, monta coinbase com SegWit e merkle, submitblock). Serve de base para o minerador de PC e para o servidor de pool.
