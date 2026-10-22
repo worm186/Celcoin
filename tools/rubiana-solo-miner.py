@@ -1,25 +1,32 @@
 #!/usr/bin/env python3
-"""Minerador solo de TESTE da Rubiana (prototipo).
-Pede o modelo de bloco ao no, procura o nonce com o rubiana-search (RandomX)
-e envia o bloco pronto. Uso:
-  python3 tools/rubiana-solo-miner.py "<bitcoin-cli e opcoes>" <endereco> <rubiana-search> [blocos]
+"""Minerador solo de TESTE da Rubiana, versao 2 (usa o motor rubiana-miner).
+Uso:
+  python3 tools/rubiana-solo-miner.py "<bitcoin-cli e opcoes>" <endereco> <rubiana-miner> [--threads N] [--full] [--blocks N]
 """
+import argparse
 import hashlib
 import json
 import os
+import queue
 import struct
 import subprocess
 import sys
+import threading
 import time
 
-CLI = sys.argv[1].split()
-ADDRESS = sys.argv[2]
-SEARCH = sys.argv[3]
-NBLOCKS = int(sys.argv[4]) if len(sys.argv) > 4 else 1
+ap = argparse.ArgumentParser()
+ap.add_argument("cli")
+ap.add_argument("address")
+ap.add_argument("miner")
+ap.add_argument("--threads", type=int, default=1)
+ap.add_argument("--full", action="store_true")
+ap.add_argument("--blocks", type=int, default=0)
+args = ap.parse_args()
+CLI = args.cli.split()
 
 
-def rpc(*args):
-    r = subprocess.run(CLI + [str(a) for a in args], capture_output=True, text=True)
+def rpc(*a):
+    r = subprocess.run(CLI + [str(x) for x in a], capture_output=True, text=True)
     if r.returncode != 0:
         raise RuntimeError(r.stderr.strip() or r.stdout.strip())
     return r.stdout.strip()
@@ -72,46 +79,98 @@ def merkle_root(hashes):
     return hashes[0]
 
 
-def mine_one(spk):
-    t = json.loads(rpc("getblocktemplate", '{"rules":["segwit"]}'))
-    height = t["height"]
+def make_job(t, spk):
     txs = t["transactions"]
-    extranonce = os.urandom(8)
-    legacy, witness = build_coinbase(height, t["coinbasevalue"], spk, bytes.fromhex(t["default_witness_commitment"]), extranonce)
+    legacy, witness = build_coinbase(
+        t["height"], t["coinbasevalue"], spk, bytes.fromhex(t["default_witness_commitment"]), os.urandom(8)
+    )
     hashes = [dsha(legacy)] + [bytes.fromhex(x["txid"])[::-1] for x in txs]
-    root = merkle_root(hashes)
     header76 = (
         struct.pack("<i", t["version"])
         + bytes.fromhex(t["previousblockhash"])[::-1]
-        + root
+        + merkle_root(hashes)
         + struct.pack("<II", t["curtime"], int(t["bits"], 16))
     )
-    start = int.from_bytes(os.urandom(4), "little")  # nonce inicial aleatorio
-    t0 = time.time()
-    r = subprocess.run([SEARCH, header76.hex(), t["target"], str(start), "100000"], capture_output=True, text=True)
-    out = r.stdout.split()
-    if not out or out[0] != "FOUND":
-        print("nenhum nonce neste lote; pedindo novo modelo...", r.stderr.strip())
-        return False
-    nonce = int(out[1])
-    block = header76 + struct.pack("<I", nonce) + varint(1 + len(txs)) + witness + b"".join(bytes.fromhex(x["data"]) for x in txs)
-    res = rpc("submitblock", block.hex())
-    print(f"bloco {height}: nonce {nonce}, {time.time() - t0:.1f}s, resposta do no: {res or 'aceito'}")
-    return res == ""
+    return header76, witness, txs
+
+
+class Engine:
+    def __init__(self):
+        cmd = [args.miner, "--threads", str(args.threads)] + (["--full"] if args.full else [])
+        self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1)
+        self.q = queue.Queue()
+        threading.Thread(target=self._reader, daemon=True).start()
+
+    def _reader(self):
+        for line in self.p.stdout:
+            self.q.put(line.split())
+
+    def send(self, line):
+        self.p.stdin.write(line + "\n")
+        self.p.stdin.flush()
+
+    def stats(self):
+        self.send("STATS")
+        end = time.time() + 5
+        while time.time() < end:
+            try:
+                m = self.q.get(timeout=1)
+            except queue.Empty:
+                continue
+            if m and m[0] == "STATS":
+                return int(m[1]), float(m[2])
+        return None
 
 
 def main():
-    info = json.loads(rpc("validateaddress", ADDRESS))
+    info = json.loads(rpc("validateaddress", args.address))
     if not info.get("isvalid"):
         sys.exit("endereco invalido")
     spk = bytes.fromhex(info["scriptPubKey"])
-    done = 0
-    tentativas = 0
-    while done < NBLOCKS and tentativas < NBLOCKS * 5:
-        tentativas += 1
-        if mine_one(spk):
-            done += 1
-    print(f"{done} bloco(s) minerado(s)")
+    eng = Engine()
+    if eng.q.get(timeout=60)[0] != "READY":
+        sys.exit("o motor nao ficou pronto")
+    print(f"motor pronto: {args.threads} thread(s), modo {'completo' if args.full else 'leve'}")
+    found = 0
+    job_id = 0
+    last = (0, 0.0)
+    try:
+        while args.blocks == 0 or found < args.blocks:
+            t = json.loads(rpc("getblocktemplate", '{"rules":["segwit"]}'))
+            header76, witness, txs = make_job(t, spk)
+            job_id += 1
+            eng.send(f"JOB {job_id} {header76.hex()} {t['target']}")
+            deadline = time.time() + (180 if job_id == 1 else 30)
+            nonce = None
+            while nonce is None and time.time() < deadline:
+                try:
+                    m = eng.q.get(timeout=1)
+                except queue.Empty:
+                    continue
+                if m and m[0] == "FOUND" and int(m[1]) == job_id:
+                    nonce = int(m[2])
+            if nonce is None:
+                print("sem resultado neste trabalho; pedindo novo modelo...")
+                continue
+            block = header76 + struct.pack("<I", nonce) + varint(1 + len(txs)) + witness
+            block += b"".join(bytes.fromhex(x["data"]) for x in txs)
+            res = rpc("submitblock", block.hex())
+            if res == "":
+                found += 1
+            rate = ""
+            s = eng.stats()
+            if s and s[1] > last[1]:
+                rate = f", ~{(s[0] - last[0]) / (s[1] - last[1]):.0f} H/s"
+                last = s
+            print(f"bloco {t['height']}: nonce {nonce}, resposta do no: {res or 'aceito'}{rate}")
+    except KeyboardInterrupt:
+        print("interrompido")
+    finally:
+        try:
+            eng.send("QUIT")
+        except Exception:
+            pass
+    print(f"{found} bloco(s) minerado(s)")
 
 
 main()
