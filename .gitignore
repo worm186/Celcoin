@@ -27,3 +27,16 @@ target/
 /guix-build-*
 
 /ci/scratch/
+saida.txt
+pool.log
+pool-data.json
+minerA.log
+minerB.log
+pool.log
+pool-data.json
+minerA.log
+minerB.log
+pool.log
+pool-data.json
+minerA.log
+minerB.log
