@@ -21,9 +21,10 @@ ap.add_argument("--engine", default="./build/bin/rubiana-miner")
 ap.add_argument("--port", type=int, default=3333)
 ap.add_argument("--share-factor", type=int, default=4)
 ap.add_argument("--report", action="store_true")
+ap.add_argument("--data", default="pool-data.json")
 args = ap.parse_args()
 CLI = args.cli.split()
-DATA = "pool-data.json"
+DATA = args.data
 
 
 def load():
