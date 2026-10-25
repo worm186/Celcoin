@@ -69,3 +69,25 @@ Nome provisório: Rubiana, sigla RUBIA. Checagens feitas (CoinMarketCap, GitHub,
 - 23/10/2026: motor agora compilado em build/bin/rubiana-miner (a pasta /tmp é apagada quando o Codespace reinicia). Compilar: g++ -O2 -std=c++17 -o build/bin/rubiana-miner tools/rubiana-miner.cpp -I src/randomx/src $(find build -name librandomx.a | head -1) -lpthread
 - 23/10/2026: pool v0 local (tools/rubiana-pool.py, asyncio, só em 127.0.0.1, 0% de taxa, contabilidade por trabalho em pool-data.json, conferência de shares pelo comando HASH do motor), tools/rubiana-pool-miner.py e tools/rubiana_common.py. Falta: pagamento real após maturidade (100 blocos), dificuldade de share por minerador (vardiff), extranonce por minerador, limite por pool.
 - 24/10/2026: pagamento da pool (tools/rubiana-pool-pay.py): credita rodadas com 100 confirmações como saldo por endereço, paga em uma transação (sendmany, taxa de rede dividida entre quem recebe, pool sem taxa) quem tem saldo >= mínimo (0,001 por padrão). Testado na regtest com --data pool-regtest.json. Próximos refinamentos: PPLNS no lugar do proporcional por rodada (resiste a pool hopping e reduz a oscilação), dificuldade de share por minerador (vardiff), extranonce por minerador.
+
+## CHECKLIST DE PENDÊNCIAS (24/10/2026)
+Núcleo:
+- [ ] No lançamento: remover MineGenesis, fixar nonce/hash/merkle e reabilitar os asserts; nTime real; dificuldade inicial e rampa dos primeiros blocos (lançamento justo)
+- [ ] Renomear programas e pastas (bitcoind, bitcoin-cli, .bitcoin) e textos "Bitcoin Core"
+- [ ] Adaptar PermittedDifficultyTransition para a rede principal (LWMA muda a cada bloco)
+- [ ] Taxa padrão (fallbackfee) para carteiras numa cadeia nova
+- [ ] Sementes de rede próprias; limpar testnet4/signet; adaptar os testes automáticos do Bitcoin Core
+- [ ] Auditoria de segurança por especialistas antes de qualquer valor real
+Pool:
+- [x] Pool local, conferência de shares (HASH), contabilidade por trabalho, pagamento com saldo e mínimo (testado na regtest)
+- [ ] Dificuldade de share por minerador (vardiff) e limite da fila de conferência (o teste da regtest mostrou a fila estourando)
+- [ ] PPLNS no lugar do proporcional por rodada; extranonce por minerador; limite de tamanho por pool; pagamentos automáticos periódicos; página pública de estatísticas
+Mineradores e apps:
+- [ ] Minerador de PC polido (modo completo, limite de CPU, configuração)
+- [ ] App Android (NDK, serviço em primeiro plano, limite de temperatura, só carregando/Wi-Fi), distribuição por APK/F-Droid
+- [ ] Antivírus: código aberto, transparência e assinatura digital
+Carteira e explorador:
+- [ ] Carteira open source (Android) e explorador de blocos web (estilo mempool.space)
+Projeto:
+- [ ] Marca (INPI), domínio, organização no GitHub, redes sociais, site, texto explicativo, testnet pública, parte legal
+- 24/10/2026: PAGAMENTO DA POOL TESTADO COM SUCESSO na regtest (rodadas com 100 confirmações viram saldo; pago 602 moedas = 7 blocos a 2 mineradores; segunda execução não paga de novo). Para testar: gerar 110 blocos pelo nó (generatetoaddress 110 $POOL) e rodar rubiana-pool-pay.py. As variáveis de shell ($POOL, $A, $B) só existem no terminal onde foram criadas.
