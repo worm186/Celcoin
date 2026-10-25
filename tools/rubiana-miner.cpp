@@ -226,7 +226,7 @@ void Worker()
             uint8_t hash[32];
             randomx_calculate_hash(vm, buf, sizeof(buf), hash);
             g_hashes.fetch_add(1, std::memory_order_relaxed);
-            if (LessEq(hash, job.share_le)) {
+            if (LessEq(hash, job.share_le) || LessEq(hash, job.target_le)) {
                 const bool is_block = LessEq(hash, job.target_le);
                 std::lock_guard<std::mutex> out_lock(g_out_mutex);
                 printf("SHARE %llu %u ", static_cast<unsigned long long>(job.id), nonce);

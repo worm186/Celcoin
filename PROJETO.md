@@ -91,3 +91,21 @@ Carteira e explorador:
 Projeto:
 - [ ] Marca (INPI), domínio, organização no GitHub, redes sociais, site, texto explicativo, testnet pública, parte legal
 - 24/10/2026: PAGAMENTO DA POOL TESTADO COM SUCESSO na regtest (rodadas com 100 confirmações viram saldo; pago 602 moedas = 7 blocos a 2 mineradores; segunda execução não paga de novo). Para testar: gerar 110 blocos pelo nó (generatetoaddress 110 $POOL) e rodar rubiana-pool-pay.py. As variáveis de shell ($POOL, $A, $B) só existem no terminal onde foram criadas.
+
+## ITENS ADICIONAIS (revisão da conversa, 25/10/2026)
+- [ ] PROMETIDO E AINDA NÃO FEITO: desenho das frentes explorador / carteira / app Android, para decidir por onde começar e quando trazer um desenvolvedor parceiro
+- [ ] Carteira leve para celular: senha de recuperação (12/24 palavras), endereço novo a cada recebimento e um jeito de ver o saldo sem rodar nó completo (servidor/protocolo leve)
+- [ ] Limpar dados do Bitcoin que sobraram: chainTxData, m_assumeutxo_data, script_flag_exceptions, sementes fixas (vFixedSeeds) e comentários antigos (210.000 blocos, "Bitcoin")
+- [ ] Portas RPC e pasta de dados próprias (hoje coincidem com as do Bitcoin: ~/.bitcoin e RPC 8332/18332), para não colidir com um Bitcoin Core instalado
+- [ ] Licenças: manter os avisos de copyright do Bitcoin Core (MIT) e do RandomX (BSD-3); README e LICENSE indicando que é um fork
+- [ ] Revisar o LWMA (janela de 60, limites, manipulação de data/hora, time warp) com simulações de hashrate variável; revisar a regra dos primeiros 60 blocos (dificuldade fixa do gênesis)
+- [ ] Chave do RandomX por época: reavaliar a fraqueza perto da virada (minerador escolhe entre duas chaves) e o custo de trocar o cache; no minerador, preparar o conjunto de dados da próxima época antes da virada (hoje o motor para uns 30 s)
+- [ ] RandomX no Android/ARM64: confirmar JIT e desempenho no aparelho (Galaxy A06 como referência); sem JIT fica inútil
+- [ ] Binários para Windows, Linux e macOS por compilação automática (GitHub Actions), com somas de verificação e builds reproduzíveis
+- [ ] Pool pública: TLS, limite de conexões por IP, limpeza de dados antigos, carteira quente com limite de saldo, tratar bloco órfão, pagamentos automáticos
+- [ ] Opção de pool descentralizada (estilo P2Pool) e limite de tamanho por pool
+- [ ] Não prometer lucro no app/site: mensagens honestas sobre bateria, calor e ganhos pequenos
+- [ ] Ideias futuras: camada opcional de privacidade (só com rede e auditoria), testnet SHA-256 à parte para NerdMiner (diversão), explorador com gráficos de dificuldade
+- [ ] Antes do lançamento, repetir: checagem de nome/sigla (RUBIA), domínio, GitHub, redes e INPI com advogado
+- [ ] Remover tools/rubiana-search.cpp e o minerador solo v1 quando não servirem mais
+- 25/10/2026: pool v1 (vardiff por minerador: alvo de share ajustado a cada ~30 s para 1 share a cada N segundos; limite da fila de conferência; conferência em segundo plano; salva ao encerrar) e motor que sempre reporta hits de bloco. Pagamento é por trabalho (2^256/alvo usado), então vardiff não afeta a justiça. Testar com --share-seconds 5 e dois mineradores (leve e completo).
