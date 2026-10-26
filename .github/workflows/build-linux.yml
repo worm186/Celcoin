@@ -1,0 +1,36 @@
+name: Compilar Linux
+
+on:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar dependencias
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkgconf python3 libevent-dev libboost-dev libsqlite3-dev
+      - name: Configurar
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Compilar
+        run: cmake --build build -j $(nproc) --target bitcoin bitcoind bitcoin-cli bitcoin-tx bitcoin-util bitcoin-wallet
+      - name: Compilar o motor de mineracao
+        run: g++ -O2 -std=c++17 -o build/bin/rubiana-miner tools/rubiana-miner.cpp -I src/randomx/src $(find build -name librandomx.a | head -1) -lpthread
+      - name: Conferir
+        run: ./build/bin/rubianad -version | head -3
+      - name: Guardar os programas
+        uses: actions/upload-artifact@v4
+        with:
+          name: rubiana-linux
+          path: |
+            build/bin/rubiana
+            build/bin/rubianad
+            build/bin/rubiana-cli
+            build/bin/rubiana-tx
+            build/bin/rubiana-util
+            build/bin/rubiana-wallet
+            build/bin/rubiana-miner
+            tools/rubiana-mine.py
+            tools/rubiana-solo-miner.py
