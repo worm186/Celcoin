@@ -14,7 +14,7 @@ from rubiana_common import rpc  # noqa: E402
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--address", required=True)
-ap.add_argument("--cli", default="./build/bin/bitcoin-cli -testnet")
+ap.add_argument("--cli", default="./build/bin/rubiana-cli -testnet")
 ap.add_argument("--data", default="pool-data.json")
 ap.add_argument("--min-pay", type=float, default=0.001)
 ap.add_argument("--dry-run", action="store_true")

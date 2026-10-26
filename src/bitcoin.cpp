@@ -86,9 +86,9 @@ int main(int argc, char* argv[])
         } else if (cmd.command == "gui") {
             args.emplace_back(UseMultiprocess(cmd) ? "bitcoin-gui" : "bitcoin-qt");
         } else if (cmd.command == "node") {
-            args.emplace_back(UseMultiprocess(cmd) ? "bitcoin-node" : "bitcoind");
+            args.emplace_back(UseMultiprocess(cmd) ? "rubiana-node" : "rubianad");
         } else if (cmd.command == "rpc") {
-            args.emplace_back("bitcoin-cli");
+            args.emplace_back("rubiana-cli");
             // Since "bitcoin rpc" is a new interface that doesn't need to be
             // backward compatible, enable -named by default so it is convenient
             // for callers to use a mix of named and unnamed parameters. Callers
@@ -96,9 +96,9 @@ int main(int argc, char* argv[])
             // that contain '=' characters, so -nonamed should rarely be needed.
             args.emplace_back("-named");
         } else if (cmd.command == "wallet") {
-            args.emplace_back("bitcoin-wallet");
+            args.emplace_back("rubiana-wallet");
         } else if (cmd.command == "tx") {
-            args.emplace_back("bitcoin-tx");
+            args.emplace_back("rubiana-tx");
         } else if (cmd.command == "bench") {
             args.emplace_back("bench_bitcoin");
         } else if (cmd.command == "chainstate") {
@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
         } else if (cmd.command == "test-gui") {
             args.emplace_back("test_bitcoin-qt");
         } else if (cmd.command == "util") {
-            args.emplace_back("bitcoin-util");
+            args.emplace_back("rubiana-util");
         } else {
             throw std::runtime_error(strprintf("Unrecognized command: '%s'", cmd.command));
         }

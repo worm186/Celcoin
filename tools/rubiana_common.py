@@ -1,4 +1,4 @@
-"""Funcoes comuns dos scripts da Rubiana (RPC pelo bitcoin-cli, coinbase, merkle)."""
+"""Funcoes comuns dos scripts da Rubiana (RPC pelo rubiana-cli, coinbase, merkle)."""
 import hashlib
 import os
 import struct

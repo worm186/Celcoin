@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from rubiana_common import make_job, rpc, varint  # noqa: E402
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--cli", default="./build/bin/bitcoin-cli -testnet")
+ap.add_argument("--cli", default="./build/bin/rubiana-cli -testnet")
 ap.add_argument("--address")
 ap.add_argument("--engine", default="./build/bin/rubiana-miner")
 ap.add_argument("--port", type=int, default=3333)

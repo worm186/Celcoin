@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Minerador solo de TESTE da Rubiana, versao 2 (usa o motor rubiana-miner).
 Uso:
-  python3 tools/rubiana-solo-miner.py "<bitcoin-cli e opcoes>" <endereco> <rubiana-miner> [--threads N] [--full] [--blocks N]
+  python3 tools/rubiana-solo-miner.py "<rubiana-cli e opcoes>" <endereco> <rubiana-miner> [--threads N] [--full] [--blocks N]
 """
 import argparse
 import hashlib

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Explorador de blocos da Rubiana (v0, so leitura). Le do no pelo bitcoin-cli e serve uma pagina web.
-Uso: python3 tools/rubiana-explorer.py [--cli "./build/bin/bitcoin-cli -testnet"] [--port 8080]
+"""Explorador de blocos da Rubiana (v0, so leitura). Le do no pelo rubiana-cli e serve uma pagina web.
+Uso: python3 tools/rubiana-explorer.py [--cli "./build/bin/rubiana-cli -testnet"] [--port 8080]
 Para abrir transacoes pelo id, inicie o no com -txindex=1."""
 import argparse
 import json
@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from rubiana_common import rpc  # noqa: E402
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--cli", default="./build/bin/bitcoin-cli -testnet")
+ap.add_argument("--cli", default="./build/bin/rubiana-cli -testnet")
 ap.add_argument("--port", type=int, default=8080)
 args = ap.parse_args()
 CLI = args.cli.split()
