@@ -129,3 +129,4 @@ Projeto:
 - Caminho mínimo de lançamento: higiene do núcleo; minerador simples para PC com binários prontos; gênesis e parâmetros finais; período de revisão aberta; publicar. Pool, app, carteira e explorador podem vir depois. Estimativa: 2 a 3 meses.
 - DECISÃO PENDENTE: lançar só com PC ou esperar um minerador Android mínimo (+2 a 3 meses). Inclinação do assistente: esperar, se o celular é a razão de ser da moeda.
 - Plano pago do Claude: não necessário agora; considerar o Pro (inclui Claude Code) por um mês quando começar o app Android.
+- 26/10/2026: higiene do núcleo parte 2: pasta de dados .rubiana, arquivo rubiana.conf e portas RPC 8690/18690/18691 (main/testnet/regtest). Falta: demais textos "Bitcoin" e renomear programas.
