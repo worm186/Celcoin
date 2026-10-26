@@ -861,7 +861,7 @@ fs::path GetDefaultDataDir()
     // Windows:
     //   old: C:\Users\Username\AppData\Roaming\Bitcoin
     //   new: C:\Users\Username\AppData\Local\Bitcoin
-    // macOS: ~/Library/Application Support/Bitcoin
+    // macOS: ~/Library/Application Support/Rubiana
     // Unix-like: ~/.bitcoin
 #ifdef WIN32
     // Windows
@@ -880,7 +880,7 @@ fs::path GetDefaultDataDir()
         pathRet = fs::path(pszHome);
 #ifdef __APPLE__
     // macOS
-    return pathRet / "Library/Application Support/Bitcoin";
+    return pathRet / "Library/Application Support/Rubiana";
 #else
     // Unix-like
     return pathRet / ".rubiana";

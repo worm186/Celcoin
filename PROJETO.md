@@ -130,3 +130,4 @@ Projeto:
 - DECISÃO PENDENTE: lançar só com PC ou esperar um minerador Android mínimo (+2 a 3 meses). Inclinação do assistente: esperar, se o celular é a razão de ser da moeda.
 - Plano pago do Claude: não necessário agora; considerar o Pro (inclui Claude Code) por um mês quando começar o app Android.
 - 26/10/2026: higiene do núcleo parte 2: pasta de dados .rubiana, arquivo rubiana.conf e portas RPC 8690/18690/18691 (main/testnet/regtest). Falta: demais textos "Bitcoin" e renomear programas.
+- 26/10/2026: higiene do núcleo parte 3: CLIENT_NAME agora "Rubiana" (CMakeLists.txt), texto de ajuda do RPC e pasta do macOS trocados. license_info.cpp e COPYING mantidos de propósito (a licença MIT exige manter o aviso de copyright do Bitcoin Core). Falta: renomear programas (bitcoind etc.) e revisar o user agent da rede (clientversion.cpp).

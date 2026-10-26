@@ -536,7 +536,7 @@ static RPCResult OpenRPCDocResult()
             {RPCResult::Type::OBJ, "info", "Metadata about this JSON-RPC interface.",
                 {
                     {RPCResult::Type::STR, "title", "API title."},
-                    {RPCResult::Type::STR, "version", "Bitcoin Core version string."},
+                    {RPCResult::Type::STR, "version", "Rubiana version string."},
                     {RPCResult::Type::STR, "description", "API description."},
                 }},
             {RPCResult::Type::ARR, "methods", "Documented RPC methods.",
