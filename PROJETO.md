@@ -111,3 +111,21 @@ Projeto:
 - 25/10/2026: pool v1 (vardiff por minerador: alvo de share ajustado a cada ~30 s para 1 share a cada N segundos; limite da fila de conferência; conferência em segundo plano; salva ao encerrar) e motor que sempre reporta hits de bloco. Pagamento é por trabalho (2^256/alvo usado), então vardiff não afeta a justiça. Testar com --share-seconds 5 e dois mineradores (leve e completo).
 - 25/10/2026: DESENHO DAS FRENTES entregue (roteiro na conversa): explorador e carteira web = usuário + assistente (AI Studio, Netlify, Firebase); app Android e carteira leve de celular = candidatos a desenvolvedor parceiro, de preferência adaptando projeto open source; melhor momento de trazê-lo: testnet pública e explorador de pé. Estimativas: testnet pública 2 a 3 meses; tudo pronto e auditado 6 a 12 meses.
 - 25/10/2026: explorador v0 (tools/rubiana-explorer.py, só leitura, 127.0.0.1:8080, precisa do nó com -txindex=1). Vardiff v1: ajustar para reagir mais cedo no começo (palpite inicial longe da potência real).
+
+## DECISÕES DE LANÇAMENTO (25/10/2026)
+- Estilo Satoshi: lançar o código aberto de forma justa, sem ICO/IPO, sem pré-mineração secreta e sem marketing; o criador minera como qualquer outro, com anúncio curto e sóbrio, sem promessas. Publicar código, gênesis e hora de início antes de começar a minerar.
+- Poder zero do criador sobre a rede: sem chaves especiais, sem pontos de verificação controlados, e pool, explorador e nós de entrada substituíveis por qualquer pessoa.
+- Marca: NÃO registrar (decisão do criador; registrar vincularia a moeda a uma pessoa). Remover "Marca (INPI)" do checklist.
+- Revisão: preferir revisão pública aberta (código público, testnet com voluntários); auditoria paga é opcional.
+- Caminho mínimo de lançamento: higiene do núcleo; minerador simples para PC com binários prontos; gênesis e parâmetros finais; período de revisão aberta; publicar. Pool, app, carteira e explorador podem vir depois. Estimativa: 2 a 3 meses.
+- DECISÃO PENDENTE: lançar só com PC ou esperar um minerador Android mínimo (+2 a 3 meses). Inclinação do assistente: esperar, se o celular é a razão de ser da moeda.
+- Plano pago do Claude: não necessário agora; considerar o Pro (inclui Claude Code) por um mês quando começar o app Android.
+
+## DECISÕES DE LANÇAMENTO (25/10/2026)
+- Estilo Satoshi: lançar o código aberto de forma justa, sem ICO/IPO, sem pré-mineração secreta e sem marketing; o criador minera como qualquer outro, com anúncio curto e sóbrio, sem promessas. Publicar código, gênesis e hora de início antes de começar a minerar.
+- Poder zero do criador sobre a rede: sem chaves especiais, sem pontos de verificação controlados, e pool, explorador e nós de entrada substituíveis por qualquer pessoa.
+- Marca: NÃO registrar (decisão do criador; registrar vincularia a moeda a uma pessoa). Remover "Marca (INPI)" do checklist.
+- Revisão: preferir revisão pública aberta (código público, testnet com voluntários); auditoria paga é opcional.
+- Caminho mínimo de lançamento: higiene do núcleo; minerador simples para PC com binários prontos; gênesis e parâmetros finais; período de revisão aberta; publicar. Pool, app, carteira e explorador podem vir depois. Estimativa: 2 a 3 meses.
+- DECISÃO PENDENTE: lançar só com PC ou esperar um minerador Android mínimo (+2 a 3 meses). Inclinação do assistente: esperar, se o celular é a razão de ser da moeda.
+- Plano pago do Claude: não necessário agora; considerar o Pro (inclui Claude Code) por um mês quando começar o app Android.
