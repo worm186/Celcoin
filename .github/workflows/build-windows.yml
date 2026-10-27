@@ -1,0 +1,37 @@
+name: Compilar Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar dependencias
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libtool autotools-dev automake pkgconf bsdmainutils curl git ca-certificates python3 cmake g++-mingw-w64-x86-64-posix wine64
+          sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+          sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+      - name: Bibliotecas de apoio (demora)
+        run: make -C depends HOST=x86_64-w64-mingw32 NO_QT=1 NO_ZMQ=1 NO_IPC=1 -j $(nproc)
+      - name: Configurar
+        run: cmake -B build --toolchain depends/x86_64-w64-mingw32/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_IPC=OFF
+      - name: Compilar
+        run: cmake --build build -j $(nproc) --target bitcoin bitcoind bitcoin-cli bitcoin-tx bitcoin-util bitcoin-wallet
+      - name: Compilar o motor de mineracao
+        run: x86_64-w64-mingw32-g++-posix -O2 -std=c++17 -static -o build/bin/rubiana-miner.exe tools/rubiana-miner.cpp -I src/randomx/src $(find build -name librandomx.a | head -1) -lpthread
+      - name: Listar
+        run: ls -l build/bin
+      - name: Conferir que abre (Wine)
+        continue-on-error: true
+        run: wine64 build/bin/rubianad.exe -version | head -3
+      - name: Guardar os programas
+        uses: actions/upload-artifact@v4
+        with:
+          name: rubiana-windows
+          path: |
+            build/bin/*.exe
+            tools/rubiana-mine.py
+            tools/rubiana-solo-miner.py
