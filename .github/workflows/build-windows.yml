@@ -19,7 +19,7 @@ jobs:
       - name: Configurar
         run: cmake -B build --toolchain depends/x86_64-w64-mingw32/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_IPC=OFF
       - name: Compilar
-        run: cmake --build build -j $(nproc) --target bitcoin bitcoind bitcoin-cli bitcoin-tx bitcoin-util bitcoin-wallet
+        run: cmake --build build -j $(nproc) --target bitcoind bitcoin-cli bitcoin-tx bitcoin-util bitcoin-wallet
       - name: Compilar o motor de mineracao
         run: x86_64-w64-mingw32-g++-posix -O2 -std=c++17 -static -o build/bin/rubiana-miner.exe tools/rubiana-miner.cpp -I src/randomx/src $(find build -name librandomx.a | head -1) -lpthread
       - name: Listar
