@@ -14,12 +14,30 @@ jobs:
           sudo apt-get install -y build-essential libtool autotools-dev automake pkgconf bsdmainutils curl git ca-certificates python3 cmake g++-mingw-w64-x86-64-posix wine64
           sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
           sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+      - name: Recuperar bibliotecas de apoio (cache)
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            depends/built
+            depends/sources
+            depends/x86_64-w64-mingw32
+          key: windows-depends-${{ hashFiles('depends/packages/**', 'depends/*.mk') }}
       - name: Bibliotecas de apoio (demora)
         run: make -C depends HOST=x86_64-w64-mingw32 NO_QT=1 NO_ZMQ=1 NO_IPC=1 -j $(nproc)
+      - name: Guardar bibliotecas de apoio (cache)
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            depends/built
+            depends/sources
+            depends/x86_64-w64-mingw32
+          key: windows-depends-${{ hashFiles('depends/packages/**', 'depends/*.mk') }}
       - name: Configurar
         run: cmake -B build --toolchain depends/x86_64-w64-mingw32/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_IPC=OFF
       - name: Compilar
-        run: cmake --build build -j $(nproc) --target bitcoind bitcoin-cli bitcoin-tx bitcoin-util bitcoin-wallet
+        run: cmake --build build -j $(nproc) --target bitcoin bitcoind bitcoin-cli bitcoin-tx bitcoin-util bitcoin-wallet
       - name: Compilar o motor de mineracao
         run: x86_64-w64-mingw32-g++-posix -O2 -std=c++17 -static -o build/bin/rubiana-miner.exe tools/rubiana-miner.cpp -I src/randomx/src $(find build -name librandomx.a | head -1) -lpthread
       - name: Listar

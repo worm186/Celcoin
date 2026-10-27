@@ -33,7 +33,7 @@ static void SetThreadName(const char* name)
     pthread_set_name_np(pthread_self(), name);
 #elif defined(__APPLE__)
     pthread_setname_np(name);
-#elif defined(WIN32)
+#elif defined(WIN32) && defined(RUBIANA_USE_SETTHREADDESCRIPTION)
     // Thread names are ASCII-only, so widening each character is sufficient as
     // a conversion to UTF-16.
     const std::wstring wname{name, name + std::strlen(name)};
