@@ -22,7 +22,7 @@ ap.add_argument("--threads", type=int, default=1)
 ap.add_argument("--full", action="store_true")
 ap.add_argument("--blocks", type=int, default=0)
 args = ap.parse_args()
-CLI = args.cli.split()
+CLI = args.cli.split("|") if "|" in args.cli else args.cli.split()
 
 
 def rpc(*a):

@@ -23,9 +23,10 @@ ap.add_argument("--carteira", default="minerador")
 args = ap.parse_args()
 
 flag = ["-" + args.rede]
-daemon = os.path.join(args.bin, "rubianad")
-cli_path = os.path.join(args.bin, "rubiana-cli")
-engine = os.path.join(args.bin, "rubiana-miner")
+EXT = ".exe" if os.name == "nt" else ""
+daemon = os.path.join(args.bin, "rubianad" + EXT)
+cli_path = os.path.join(args.bin, "rubiana-cli" + EXT)
+engine = os.path.join(args.bin, "rubiana-miner" + EXT)
 for f in (daemon, cli_path, engine):
     if not os.path.exists(f):
         sys.exit("nao encontrei " + f + " (compile primeiro)")
@@ -42,7 +43,10 @@ started = False
 code, out = cli("getblockcount")
 if code != 0 and "-28" not in out:
     print("iniciando o no...", flush=True)
-    subprocess.run([daemon] + flag + ["-daemon", "-dnsseed=0", "-fixedseeds=0"], check=True)
+    if os.name == "nt":
+        subprocess.Popen([daemon] + flag + ["-dnsseed=0", "-fixedseeds=0"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=0x08000000)
+    else:
+        subprocess.run([daemon] + flag + ["-daemon", "-dnsseed=0", "-fixedseeds=0"], check=True)
     started = True
 
 t0 = time.time()
@@ -82,7 +86,7 @@ print("endereco de mineracao: " + addr)
 print("minerando solo na " + args.rede + ": " + str(args.threads) + " thread(s), modo " + modo + ". Ctrl+C para parar.", flush=True)
 
 solo = os.path.join(AQUI, "rubiana-solo-miner.py")
-cmd = [sys.executable, solo, " ".join(CLI), addr, engine, "--threads", str(args.threads)]
+cmd = [sys.executable, solo, "|".join(CLI), addr, engine, "--threads", str(args.threads)]
 if args.full:
     cmd.append("--full")
 if args.blocks > 0:
