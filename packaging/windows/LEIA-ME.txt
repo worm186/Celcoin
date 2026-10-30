@@ -1,0 +1,34 @@
+RUBIANA - minerador para Windows (REDE DE TESTE)
+
+IMPORTANTE: esta é uma versão de teste. As moedas desta rede NÃO têm
+valor. Serve para experimentar e ajudar a testar o projeto. Não há
+promessa de ganho nenhum.
+
+COMO USAR
+1. Extraia a pasta (botão direito no .zip, "Extrair tudo"). Não rode de
+   dentro do .zip.
+2. Dê dois cliques em  minerar.bat
+3. Se o Windows mostrar "O Windows protegeu o computador", clique em
+   "Mais informações" e depois em "Executar assim mesmo". O aviso aparece
+   porque o programa não tem assinatura digital paga. O código-fonte do
+   projeto é público e pode ser conferido por qualquer pessoa.
+4. Deixe a janela preta aberta. Cada linha "bloco N ... aceito" é um
+   bloco que você minerou.
+
+PARA PARAR
+Aperte Ctrl+C na janela. Se fechar a janela pelo X, dê dois cliques em
+parar.bat para desligar o programa que ficou em segundo plano.
+
+PARA USAR MENOS DO COMPUTADOR
+Por padrão o minerador usa a metade dos núcleos do processador. Para
+usar menos: abra configuracao.txt (botão direito, "Abrir com", "Bloco
+de Notas"), troque "automatico" por 1 (ou 2), salve com Ctrl+S e dê dois
+cliques em minerar.bat de novo.
+
+AVISOS
+- Programas de mineração costumam ser marcados como suspeitos por
+  antivírus. Se o seu bloquear, não desative o antivírus: se você não
+  confia no programa, simplesmente não use.
+- O Windows pode perguntar sobre o Firewall. Pode permitir em redes
+  privadas.
+- Os dados ficam em C:\Users\SEU_NOME\AppData\Local\Rubiana

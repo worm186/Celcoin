@@ -53,3 +53,21 @@ jobs:
             build/bin/*.exe
             tools/rubiana-mine.py
             tools/rubiana-solo-miner.py
+      - name: Montar o pacote para Windows (clique duplo)
+        run: |
+          set -e
+          mkdir -p pacote/rubiana/build/bin pacote/rubiana/tools pacote/rubiana/python
+          cp build/bin/rubianad.exe build/bin/rubiana-cli.exe build/bin/rubiana-miner.exe pacote/rubiana/build/bin/
+          cp tools/rubiana-mine.py tools/rubiana-solo-miner.py pacote/rubiana/tools/
+          cp packaging/windows/* pacote/rubiana/
+          sed -i 's/$/\r/' pacote/rubiana/minerar.bat pacote/rubiana/parar.bat pacote/rubiana/configuracao.txt pacote/rubiana/LEIA-ME.txt
+          cp COPYING pacote/rubiana/COPYING.txt
+          curl -fsSL -o python-embed.zip https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip
+          echo "$(cat packaging/python-embed.sha256)  python-embed.zip" | sha256sum -c -
+          unzip -q python-embed.zip -d pacote/rubiana/python
+          (cd pacote && zip -qr ../rubiana-windows-pacote.zip rubiana)
+      - name: Guardar o pacote
+        uses: actions/upload-artifact@v4
+        with:
+          name: rubiana-windows-pacote
+          path: rubiana-windows-pacote.zip

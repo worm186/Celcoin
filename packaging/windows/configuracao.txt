@@ -1,0 +1,9 @@
+# Configuracao do minerador Rubiana.
+# Para mudar: edite o que vem depois do sinal de igual, salve (Ctrl+S)
+# e de dois cliques em minerar.bat de novo.
+#
+# processadores = quantos nucleos do computador usar para minerar.
+#   automatico  = usa a METADE dos nucleos (recomendado)
+#   1           = usa so 1 nucleo (o computador fica bem leve)
+#   2, 3, 4...  = usa essa quantidade
+processadores=automatico

@@ -20,7 +20,20 @@ ap.add_argument("--full", action="store_true", help="modo completo (precisa de 2
 ap.add_argument("--blocks", type=int, default=0, help="parar depois de N blocos (0 = ate Ctrl+C)")
 ap.add_argument("--bin", default=os.path.join(RAIZ, "build", "bin"))
 ap.add_argument("--carteira", default="minerador")
+ap.add_argument("--config", default="", help="arquivo de configuracao (opcional)")
 args = ap.parse_args()
+
+if args.config and os.path.exists(args.config):
+    for linha in open(args.config, encoding="utf-8", errors="replace"):
+        linha = linha.strip()
+        if not linha or linha.startswith("#") or "=" not in linha:
+            continue
+        chave, valor = [x.strip().lower() for x in linha.split("=", 1)]
+        if chave == "processadores" and valor != "automatico":
+            if valor.isdigit() and int(valor) >= 1:
+                args.threads = min(int(valor), os.cpu_count() or 1)
+            else:
+                print("configuracao.txt: valor invalido em 'processadores' (use automatico ou um numero). Usando automatico.")
 
 flag = ["-" + args.rede]
 EXT = ".exe" if os.name == "nt" else ""
