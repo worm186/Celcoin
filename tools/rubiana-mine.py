@@ -40,13 +40,21 @@ def cli(*a, wallet=False):
 
 
 started = False
+
+
+def fail(msg):
+    if started:
+        cli("stop")
+    sys.exit(msg)
+
+
 code, out = cli("getblockcount")
 if code != 0 and "-28" not in out:
     print("iniciando o no...", flush=True)
     if os.name == "nt":
-        subprocess.Popen([daemon] + flag + ["-dnsseed=0", "-fixedseeds=0"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=0x08000000)
+        subprocess.Popen([daemon] + flag + ["-dnsseed=0", "-fixedseeds=0", "-listenonion=0"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=0x08000000)
     else:
-        subprocess.run([daemon] + flag + ["-daemon", "-dnsseed=0", "-fixedseeds=0"], check=True)
+        subprocess.run([daemon] + flag + ["-daemon", "-dnsseed=0", "-fixedseeds=0", "-listenonion=0"], check=True)
     started = True
 
 t0 = time.time()
@@ -55,7 +63,7 @@ while True:
     if code == 0:
         break
     if time.time() - t0 > 180:
-        sys.exit("o no demorou demais para ficar pronto: " + out)
+        fail("o no demorou demais para ficar pronto: " + out)
     time.sleep(2)
 print("no pronto, altura " + out, flush=True)
 
@@ -63,7 +71,7 @@ code, out = cli("loadwallet", args.carteira)
 if code != 0 and "already loaded" not in out.lower():
     code, out = cli("createwallet", args.carteira)
     if code != 0:
-        sys.exit("nao consegui preparar a carteira: " + out)
+        fail("nao consegui preparar a carteira: " + out)
 
 pasta = os.path.expanduser("~/.rubiana")
 os.makedirs(pasta, exist_ok=True)
@@ -77,7 +85,7 @@ if os.path.exists(arq):
 if not addr:
     code, out = cli("getnewaddress", wallet=True)
     if code != 0:
-        sys.exit("nao consegui criar o endereco: " + out)
+        fail("nao consegui criar o endereco: " + out)
     addr = out
     open(arq, "w").write(addr + "\n")
 

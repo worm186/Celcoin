@@ -330,7 +330,7 @@ bool IsDirWritable(const fs::path& dir_path)
     FastRandomContext rng;
     const auto tmp = dir_path / fs::PathFromString(strprintf(".tmp_%d", rng.rand64()));
 
-    if (const auto created{fsbridge::fopen(tmp, "wx")}) {
+    if (const auto created{fsbridge::fopen(tmp, "w")}) {
         std::fclose(created);
         std::error_code ec;
         fs::remove(tmp, ec); // clean up, ignore errors
