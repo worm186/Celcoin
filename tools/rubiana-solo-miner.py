@@ -150,7 +150,7 @@ def main():
                 if m and m[0] == "FOUND" and int(m[1]) == job_id:
                     nonce = int(m[2])
             if nonce is None:
-                print("sem resultado neste trabalho; pedindo novo modelo...")
+                print("ainda procurando o proximo bloco (isso e normal)...")
                 continue
             block = header76 + struct.pack("<I", nonce) + varint(1 + len(txs)) + witness
             block += b"".join(bytes.fromhex(x["data"]) for x in txs)

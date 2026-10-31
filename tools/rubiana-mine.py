@@ -23,15 +23,17 @@ ap.add_argument("--carteira", default="minerador")
 ap.add_argument("--config", default="", help="arquivo de configuracao (opcional)")
 args = ap.parse_args()
 
+origem = "pedido na linha de comando" if "--threads" in sys.argv else "metade dos nucleos, automatico"
 if args.config and os.path.exists(args.config):
     for linha in open(args.config, encoding="utf-8", errors="replace"):
         linha = linha.strip()
         if not linha or linha.startswith("#") or "=" not in linha:
             continue
         chave, valor = [x.strip().lower() for x in linha.split("=", 1)]
-        if chave == "processadores" and valor != "automatico":
+        if chave == "processadores" and valor not in ("automatico", "metade"):
             if valor.isdigit() and int(valor) >= 1:
                 args.threads = min(int(valor), os.cpu_count() or 1)
+                origem = "definido em configuracao.txt"
             else:
                 print("configuracao.txt: valor invalido em 'processadores' (use automatico ou um numero). Usando automatico.")
 
@@ -104,6 +106,7 @@ if not addr:
 
 modo = "completo" if args.full else "leve"
 print("endereco de mineracao: " + addr)
+print("seu computador tem " + str(os.cpu_count()) + " nucleos; usando " + str(args.threads) + " para minerar (" + origem + ").")
 print("minerando solo na " + args.rede + ": " + str(args.threads) + " thread(s), modo " + modo + ". Ctrl+C para parar.", flush=True)
 
 solo = os.path.join(AQUI, "rubiana-solo-miner.py")

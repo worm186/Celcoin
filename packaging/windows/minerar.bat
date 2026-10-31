@@ -7,8 +7,8 @@ echo   RUBIANA - minerador (REDE DE TESTE)
 echo   As moedas desta rede de teste NAO tem valor.
 echo ================================================
 echo.
-echo Para PARAR: aperte Ctrl+C nesta janela.
-echo Para usar MENOS do computador: abra o arquivo configuracao.txt
+echo Para PARAR: aperte Ctrl+C. Se perguntar "S/N", digite N e Enter.
+echo Para usar MENOS do computador: use o arquivo minerar-leve.bat
 echo.
 python\python.exe tools\rubiana-mine.py --rede testnet --config configuracao.txt
 echo.

@@ -13,17 +13,20 @@ COMO USAR
    porque o programa não tem assinatura digital paga. O código-fonte do
    projeto é público e pode ser conferido por qualquer pessoa.
 4. Deixe a janela preta aberta. Cada linha "bloco N ... aceito" é um
-   bloco que você minerou.
+   bloco que você minerou. A mensagem "ainda procurando o próximo bloco"
+   é normal: a dificuldade sobe conforme se minera.
 
 PARA PARAR
-Aperte Ctrl+C na janela. Se fechar a janela pelo X, dê dois cliques em
-parar.bat para desligar o programa que ficou em segundo plano.
+Aperte Ctrl+C na janela. Se aparecer "Deseja finalizar o arquivo em
+lotes (S/N)?", digite N e Enter. Se fechar a janela pelo X, dê dois
+cliques em parar.bat para desligar o programa que ficou em segundo plano.
 
 PARA USAR MENOS DO COMPUTADOR
 Por padrão o minerador usa a metade dos núcleos do processador. Para
-usar menos: abra configuracao.txt (botão direito, "Abrir com", "Bloco
-de Notas"), troque "automatico" por 1 (ou 2), salve com Ctrl+S e dê dois
-cliques em minerar.bat de novo.
+usar só 1 núcleo, dê dois cliques em  minerar-leve.bat  em vez de
+minerar.bat. Para escolher outro número, abra configuracao.txt (botão
+direito, "Abrir com", "Bloco de Notas"), troque a palavra da última
+linha por um número, salve com Ctrl+S e use minerar.bat.
 
 AVISOS
 - Programas de mineração costumam ser marcados como suspeitos por
